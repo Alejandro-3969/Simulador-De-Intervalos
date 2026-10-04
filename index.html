@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulador de teoría de conjuntos</title>
+<style>
+:root{--a:#2563eb;--b:#e11d48;--cc:#16a34a;--d:#9333ea;--u:#2b4c8c;--hi:#f6b93b;--bg:#e9eff7;--ink:#12223f;--mut:#5a6a85;--line:#d3deec;--r:16px;--card:#fff;--inp:#fbfdff;--code:#eef3fb;--cv:#f8fbff;--sb:#f4f8fd}
+:root[data-theme=dark]{--bg:#0d1525;--card:#17233a;--inp:#101b2e;--code:#1d2c47;--cv:#121d31;--sb:#1d2c47;--ink:#e6edf8;--mut:#93a4c0;--line:#2c3d5c;--u:#86a8f2;--a:#5b9bff;--b:#ff6b88;--cc:#4ade80;--d:#b794ff}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;font:15px/1.45 "Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--ink);padding:14px}
+.wrap{max-width:1150px;margin:auto}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+h1{font-size:1.25rem;margin:0}h1 small{display:block;font-weight:400;color:var(--mut);font-size:.8rem}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px}
+button,select,input,textarea{font:inherit;color:inherit}
+option{background:var(--card);color:var(--ink)}
+.seg button{border:0;background:none;color:var(--ink);padding:6px 14px;border-radius:999px;cursor:pointer}
+.seg button.on{background:var(--u);color:#fff}
+.reset{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 16px;cursor:pointer}
+.grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+#cv{width:100%;display:block;border-radius:12px;touch-action:none;cursor:grab;background:var(--cv)}
+.hint{color:var(--mut);font-size:.8rem;margin:8px 2px 0}
+.side{display:flex;flex-direction:column;gap:10px}
+.set h3{margin:0 0 8px;font-size:.95rem;display:flex;align-items:center;gap:8px}
+.set h3 i{width:12px;height:12px;border-radius:50%;background:var(--c)}
+.set.A{--c:var(--a)}.set.B{--c:var(--b)}.set.C{--c:var(--cc)}.set.D{--c:var(--d)}.set.U{--c:var(--u)}
+select,input,textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:7px 9px;background:var(--inp);margin-bottom:6px}
+.bar select{width:auto;margin:0;border-radius:999px;background:var(--card)}
+textarea{resize:vertical;font-family:ui-monospace,Consolas,monospace}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--c,var(--u));border-color:transparent}
+.row{display:flex;gap:8px}.row label{flex:1;font-size:.78rem;color:var(--mut)}
+code{display:block;font-size:.85rem;background:var(--code);border-radius:8px;padding:5px 8px}
+.st{margin:4px 0 0;font-size:.82rem}.ok{color:#188a5a}.er{color:#c0334f}
+h2{font-size:1rem;margin:16px 2px 8px}
+.sym{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.sym button{border:1px solid var(--line);background:var(--sb);border-radius:10px;min-width:38px;padding:5px 9px;cursor:pointer;font-size:1rem}
+#cr{font-family:ui-monospace,Consolas,monospace;word-break:break-word;margin:0}
+#res{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.op{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;cursor:pointer;display:block}
+.op b{display:block}.op span{display:block;font-family:ui-monospace,Consolas,monospace;font-size:.85rem;word-break:break-word;margin:3px 0}
+.op em{font-style:normal;color:var(--mut);font-size:.78rem}
+.op.on{border-color:var(--hi);box-shadow:0 0 0 3px #f6b93b44}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Simulador de teoría de conjuntos<small>Arrastra los círculos con el mouse o con el dedo</small></h1>
+  <div class="bar">
+    <select id="nsel"><option value="2">2 conjuntos</option><option value="3" selected>3 conjuntos</option><option value="4">4 conjuntos</option></select>
+    <div class="seg"><button data-mode="num" class="on">Numéricos</button><button data-mode="txt">Texto</button></div>
+    <button class="reset" id="theme" title="Cambiar tema"></button>
+    <button class="reset" id="reset">Reiniciar</button>
+  </div>
+</header>
+<div class="grid">
+  <div class="card"><canvas id="cv"></canvas><p class="hint">Escribe una expresión o toca una operación para resaltarla.</p></div>
+  <div class="side" id="side"></div>
+</div>
+<h2>Expresión</h2>
+<div class="card">
+  <input id="ex" spellcheck="false" autocomplete="off" placeholder="Ej: (A ∪ B) − C′   ·   atajos: | ∪  & ∩  - −  ^ △  ' ′">
+  <div class="sym" id="sym"></div>
+  <p class="hint" style="margin:0 0 6px">Las operaciones se evalúan de izquierda a derecha; usa paréntesis para agrupar.</p>
+  <p id="cr"></p>
+</div>
+<h2>Operaciones</h2>
+<div id="res"></div>
+</div>
+<script>
+const $=s=>document.querySelector(s),ALL=['A','B','C','D'];
+const DEF={num:{A:'1, 2, 3, 4, 5',B:'3, 4, 5, 6, 7',C:'5, 6, 8, 9, 11, 16',D:'4, 9, 10, 16, 19',U:'0, 10, 12, ∞',f:'1',t:'10'},txt:{A:'a, b, c, d, e',B:'c, d, e, f, g',C:'e, f, h, i, j',D:'d, i, j, k',U:'x, y, z',f:'a',t:'h'}};
+const LAY={2:{r:.3,p:{A:[.37,.5],B:[.63,.5]}},3:{r:.27,p:{A:[.4,.4],B:[.6,.4],C:[.5,.62]}},4:{r:.25,p:{A:[.38,.4],B:[.62,.4],C:[.38,.62],D:[.62,.62]}}};
+const ST={mode:'num',names:['A','B','C'],op:'',p:{}};
+const show=x=>x===Infinity?'∞':x;
+const isPrime=n=>{if(n<2||!Number.isInteger(n))return false;for(let i=2;i*i<=n;i++)if(n%i===0)return false;return true};
+const CONDS={num:[['all','Todos'],['par','Pares'],['impar','Impares'],['primo','Primos'],['mult','Múltiplos de k'],['cuad','Cuadrados perfectos']],txt:[['all','Todas las letras'],['voc','Vocales'],['con','Consonantes']]};
+const CT={all:()=>true,par:x=>x%2===0,impar:x=>Math.abs(x%2)===1,primo:isPrime,cuad:x=>x>=0&&Number.isInteger(Math.sqrt(x)),voc:x=>'aeiou'.includes(x),con:x=>!'aeiou'.includes(x)};
+
+function card(n){return `<section class="card set ${n}"><h3><i></i>Conjunto ${n}</h3>
+<select data-s="${n}" data-f="k"><option value="ext">Por extensión</option><option value="comp">Por comprensión</option></select>
+<div class="ext"><textarea rows="2" spellcheck="false" data-s="${n}" data-f="ext"></textarea></div>
+<div class="comp" hidden><div class="row"><label>Desde<input data-s="${n}" data-f="f"></label><label>Hasta<input data-s="${n}" data-f="t"></label></div>
+<div class="row"><label>Condición<select data-s="${n}" data-f="c"></select></label><label class="mk">k<input type="number" value="3" data-s="${n}" data-f="m"></label></div><code id="n${n}"></code></div>
+<p class="st" id="s${n}"></p></section>`}
+$('#side').innerHTML=ALL.map(card).join('')+`<section class="card set U"><h3><i></i>Universo U (elementos extra)</h3><textarea rows="2" spellcheck="false" data-s="U" data-f="ext"></textarea><p class="st" id="sU"></p></section>`;
+$('#sym').innerHTML=['∪','∩','−','△','′','(',')','U','A','B','C','D'].map(s=>`<button data-sym="${s}">${s}</button>`).join('');
+
+function layout(){const n=ST.names.length;ST.p=JSON.parse(JSON.stringify(LAY[n].p));
+  ALL.forEach(k=>$(`.set.${k}`).hidden=!ST.names.includes(k));$('#nsel').value=n}
+function reset(mode){
+  ST.mode=mode||ST.mode;const d=DEF[ST.mode];
+  ST.names=ALL.slice(0,+$('#nsel').value);layout();
+  ALL.forEach(k=>ST[k]={k:'ext',ext:d[k],f:d.f,t:d.t,c:'all',m:'3'});ST.U={ext:d.U};
+  document.querySelectorAll('[data-f="c"]').forEach(s=>s.innerHTML=CONDS[ST.mode].map(o=>`<option value="${o[0]}">${o[1]}</option>`).join(''));
+  document.querySelectorAll('[data-s]').forEach(el=>el.value=ST[el.dataset.s][el.dataset.f]);
+  document.querySelectorAll('.mk').forEach(e=>e.hidden=ST.mode!=='num');
+  document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===ST.mode));
+  ST.op=ST.names.join(' ∪ ');$('#ex').value=ST.op;showKinds();update();
+}
+function showKinds(){ALL.forEach(n=>{const c=ST[n].k==='comp';document.querySelector(`.set.${n} .ext`).hidden=c;document.querySelector(`.set.${n} .comp`).hidden=!c})}
+
+function parseExt(str){
+  const num=ST.mode==='num',out=new Set(),bad=[];
+  str.replace(/[{}]/g,' ').split(num?/[\s,;]+/:/\s*[,;\n]\s*/).map(t=>t.trim()).filter(Boolean).forEach(t=>{
+    const isN=/^-?\d+(\.\d+)?$/.test(t)||t==='∞';
+    if(num!==isN)bad.push(t);else out.add(num?(t==='∞'?Infinity:Number(t)):t);
+  });return {arr:[...out],bad};
+}
+const sortv=a=>ST.mode==='num'?a.sort((x,y)=>x===y?0:x-y):a.sort((x,y)=>String(x).localeCompare(y));
+const fmt=a=>a.length?'{'+a.map(show).join(', ')+'}':'∅';
+function readSet(n){
+  const s=ST[n],num=ST.mode==='num';
+  if(n==='U'||s.k==='ext'){
+    const {arr,bad}=parseExt(s.ext);
+    if(bad.length)return {arr:[],err:`Tipo distinto en: ${bad.slice(0,4).join(', ')}. Todos deben ser ${num?'números':'texto (no numérico)'}.`};
+    return {arr:sortv(arr),ok:`${arr.length} elemento(s), todos de tipo ${num?'numérico':'texto'}`};
+  }
+  let arr=[],note;
+  if(num){
+    const f=Math.ceil(+s.f),t=Math.floor(+s.t),k=Math.trunc(+s.m);
+    if(s.f===''||s.t===''||!isFinite(f)||!isFinite(t))return {arr:[],err:'Escribe números enteros en Desde y Hasta.'};
+    if(t-f>500)return {arr:[],err:'El rango es demasiado grande (máx. 500 valores).'};
+    if(s.c==='mult'&&!k)return {arr:[],err:'k debe ser un entero distinto de 0.'};
+    for(let x=f;x<=t;x++)if(s.c==='mult'?x%k===0:CT[s.c](x))arr.push(x);
+    note=`{ x ∈ ℤ | ${f} ≤ x ≤ ${t}${s.c==='all'?'':', '+(s.c==='mult'?'múltiplo de '+k:CONDS.num.find(o=>o[0]===s.c)[1].toLowerCase())} }`;
+  }else{
+    const f=s.f.trim().toLowerCase(),t=s.t.trim().toLowerCase();
+    if(!/^[a-z]$/.test(f)||!/^[a-z]$/.test(t))return {arr:[],err:'Desde y Hasta deben ser una letra (a–z).'};
+    if(f>t)return {arr:[],err:'La letra inicial debe ir antes que la final.'};
+    for(let c=f.charCodeAt(0);c<=t.charCodeAt(0);c++){const x=String.fromCharCode(c);if(CT[s.c](x))arr.push(x)}
+    note=`{ x ∈ alfabeto | ${f} ≤ x ≤ ${t}${s.c==='all'?'':', '+CONDS.txt.find(o=>o[0]===s.c)[1].toLowerCase()} }`;
+  }
+  $('#n'+n).textContent=note;
+  return {arr,ok:`${arr.length} elemento(s), todos de tipo ${num?'numérico':'texto'}`};
+}
+
+/* Expresiones: ∪ | · ∩ & · − · △ ^ · ′ ' */
+function compile(src){
+  const s=src.toUpperCase().replace(/\s+/g,'').replace(/[∪|]/g,'|').replace(/[∩&]/g,'&').replace(/[−–-]/g,'-').replace(/[△∆Δ^]/g,'^').replace(/[′’]/g,"'");
+  let i=0;
+  const atom=()=>{let f;const ch=s[i];
+    if(ch==='('){i++;f=expr();if(s[i]!==')')throw 'Falta cerrar un paréntesis.';i++}
+    else if(ch==='U'){i++;f=()=>true}
+    else if(ch&&ALL.includes(ch)){if(!ST.names.includes(ch))throw `El conjunto ${ch} no está activo.`;i++;f=m=>m[ch]}
+    else throw ch?`Símbolo inesperado: ${ch}`:'La expresión está incompleta.';
+    while(s[i]==="'"){i++;const g=f;f=m=>!g(m)}return f};
+  const expr=()=>{let f=atom();while(i<s.length&&'|&-^'.includes(s[i])){const o=s[i++],g=atom(),h=f;
+    f=o==='|'?m=>h(m)||g(m):o==='&'?m=>h(m)&&g(m):o==='-'?m=>h(m)&&!g(m):m=>h(m)!==g(m)}return f};
+  if(!s)throw 'Escribe una expresión.';
+  const f=expr();if(i<s.length)throw `Símbolo inesperado: ${s[i]}`;return f;
+}
+function presets(){
+  const n=ST.names,o=n.slice(1),P=[n.join(' ∪ ')];
+  o.forEach(x=>P.push('A ∩ '+x));if(n.length>2)P.push(n.join(' ∩ '));
+  o.forEach(x=>P.push('A − '+x,x+' − A'));o.forEach(x=>P.push('A △ '+x));
+  n.forEach(x=>P.push(x+'′'));o.forEach(x=>P.push('A ∩ '+x+'′'));o.forEach(x=>P.push('A − '+x+'′'));
+  P.push('U');return P;
+}
+
+let D={};
+const mem=(S,x)=>{const m={};ST.names.forEach(k=>m[k]=S[k].has(x));return m};
+function update(){
+  const names=ST.names,r={},S={};
+  [...names,'U'].forEach(n=>{r[n]=readSet(n);const e=$('#s'+n);e.className='st '+(r[n].err?'er':'ok');e.textContent=(r[n].err?'✖ ':'✔ ')+(r[n].err||r[n].ok)});
+  const valid=[...names,'U'].every(n=>!r[n].err);
+  names.forEach(k=>S[k]=new Set(r[k].arr));
+  const U=sortv([...new Set([...names.flatMap(k=>r[k].arr),...r.U.arr])]);
+  const key=m=>names.filter(k=>m[k]).join('');
+  const reg={};U.forEach(x=>{(reg[key(mem(S,x))]=reg[key(mem(S,x))]||[]).push(x)});
+  D={valid,U,reg,S};
+  const run=e=>{const f=compile(e);return U.filter(x=>f(mem(S,x)))};
+  let cr='';
+  try{const a=run(ST.op);cr=valid?`${ST.op} = ${fmt(a)}   |·| = ${a.length}`:'Corrige los errores de los conjuntos.';D.f=compile(ST.op);$('#cr').className=''}
+  catch(e){D.f=null;cr='✖ '+e;$('#cr').className='er'}
+  $('#cr').textContent=cr;
+  $('#res').innerHTML=valid?presets().map(e=>{const a=run(e);return `<button class="op ${ST.op.replace(/\s/g,'')===e.replace(/\s/g,'')?'on':''}" data-op="${e}"><b>${e}</b><span>${fmt(a)}</span><em>cardinalidad = ${a.length}</em></button>`}).join(''):'';
+  draw();
+}
+
+/* Dibujo */
+const cv=$('#cv'),ctx=cv.getContext('2d');let G={},dpr=1;
+function size(){dpr=window.devicePixelRatio||1;const w=cv.parentElement.clientWidth-24,h=Math.max(300,Math.min(w*.7,540));cv.style.height=h+'px';cv.width=w*dpr;cv.height=h*dpr;draw()}
+function draw(){
+  const w=cv.clientWidth,h=cv.clientHeight;if(!w||!D.S)return;
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  const names=ST.names,n=names.length,m=10,R={x:m,y:m,w:w-2*m,h:h-2*m},r=Math.min(w,h)*LAY[n].r;
+  const cs=getComputedStyle(document.documentElement);V=k=>cs.getPropertyValue(k).trim();
+  const col={A:V('--a'),B:V('--b'),C:V('--cc'),D:V('--d'),U:V('--u'),hi:V('--hi')};
+  const C={};names.forEach(k=>C[k]=[ST.p[k][0]*w,ST.p[k][1]*h]);G={R,r,C,w,h};
+  const rr=()=>{ctx.beginPath();ctx.roundRect(R.x,R.y,R.w,R.h,14)};
+  const at=(x,y)=>{const o={};names.forEach(k=>o[k]=(x-C[k][0])**2+(y-C[k][1])**2<=r*r);return o};
+  rr();ctx.fillStyle=V('--card');ctx.fill();
+  if(D.valid&&D.f){ctx.save();rr();ctx.clip();ctx.fillStyle=col.hi+'99';
+    for(let x=R.x;x<R.x+R.w;x+=3)for(let y=R.y;y<R.y+R.h;y+=3)if(D.f(at(x+1.5,y+1.5)))ctx.fillRect(x,y,3,3);ctx.restore()}
+  rr();ctx.strokeStyle=col.U;ctx.lineWidth=2;ctx.stroke();
+  names.forEach(k=>{ctx.beginPath();ctx.arc(C[k][0],C[k][1],r,0,7);ctx.fillStyle=col[k]+'38';ctx.fill();ctx.strokeStyle=col[k];ctx.lineWidth=3;ctx.stroke()});
+  const gx=names.reduce((s,k)=>s+C[k][0],0)/n,gy=names.reduce((s,k)=>s+C[k][1],0)/n;
+  ctx.font='700 16px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+  names.forEach(k=>{let dx=C[k][0]-gx,dy=C[k][1]-gy-.6*r*0+(-r*.35);const L=Math.hypot(dx,dy)||1;ctx.fillStyle=col[k];ctx.fillText(k,C[k][0]+dx/L*r*.82,C[k][1]+dy/L*r*.82)});
+  ctx.textAlign='left';ctx.fillStyle=col.U;ctx.fillText('U',R.x+12,R.y+16);
+  if(!D.valid)return;
+  const P={};
+  for(let x=R.x+4;x<R.x+R.w;x+=6)for(let y=R.y+4;y<R.y+R.h;y+=6){const o=at(x,y),k=names.filter(q=>o[q]).join('');if(k)(P[k]=P[k]||[]).push([x,y])}
+  for(const k in P){
+    const pts=P[k],items=D.reg[k];if(!items)continue;
+    const cx=pts.reduce((s,p)=>s+p[0],0)/pts.length,cy=pts.reduce((s,p)=>s+p[1],0)/pts.length;
+    const row=pts.filter(p=>Math.abs(p[1]-cy)<7).map(p=>p[0]);
+    put(items,cx,cy,Math.max(36,(Math.max(...row)-Math.min(...row))*.8),V('--ink'),n);
+  }
+  if(D.reg[''])put(D.reg[''],R.x+R.w/2,R.y+R.h-18,R.w*.85,V('--ink'),n);
+}
+let V=()=>'';
+function put(items,cx,cy,maxW,color,n){
+  const fs=n>2?12:13;ctx.font=`600 ${fs}px system-ui`;ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';
+  let lines=[],cur='';
+  items.forEach(it=>{const t=cur?cur+', '+show(it):String(show(it));if(cur&&ctx.measureText(t).width>maxW){lines.push(cur+',');cur=String(show(it))}else cur=t});
+  lines.push(cur);if(lines.length>5){lines=lines.slice(0,4);lines.push('…')}
+  ctx.lineJoin='round';ctx.lineWidth=4;ctx.strokeStyle=V('--card');
+  lines.forEach((l,i)=>{const y=cy+(i-(lines.length-1)/2)*(fs+3);ctx.strokeText(l,cx,y);ctx.fillText(l,cx,y)});
+}
+
+/* Eventos */
+let drag=null;
+const pt=e=>{const b=cv.getBoundingClientRect();return [e.clientX-b.left,e.clientY-b.top]};
+cv.addEventListener('pointerdown',e=>{
+  const q=pt(e);let best=null,bd=1e9;
+  ST.names.forEach(k=>{const d=Math.hypot(q[0]-G.C[k][0],q[1]-G.C[k][1]);if(d<=G.r&&d<bd){best=k;bd=d}});
+  if(best){drag={k:best,dx:G.C[best][0]-q[0],dy:G.C[best][1]-q[1]};cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing'}
+});
+cv.addEventListener('pointermove',e=>{
+  if(!drag)return;const q=pt(e),R=G.R;
+  const x=Math.min(R.x+R.w,Math.max(R.x,q[0]+drag.dx)),y=Math.min(R.y+R.h,Math.max(R.y,q[1]+drag.dy));
+  ST.p[drag.k]=[x/G.w,y/G.h];requestAnimationFrame(draw2);
+});
+const draw2=()=>{update()};
+['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,()=>{drag=null;cv.style.cursor='grab'}));
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='ex'){ST.op=t.value;update();return}
+  const s=t.dataset&&t.dataset.s;if(!s)return;
+  ST[s][t.dataset.f]=t.value;if(t.dataset.f==='k')showKinds();update();
+});
+$('#res').addEventListener('click',e=>{const b=e.target.closest('[data-op]');if(b){ST.op=b.dataset.op;$('#ex').value=ST.op;update()}});
+$('#sym').addEventListener('click',e=>{const b=e.target.closest('[data-sym]');if(b){ST.op+=b.dataset.sym;$('#ex').value=ST.op;update()}});
+$('#reset').addEventListener('click',()=>reset());
+$('#nsel').addEventListener('change',()=>reset());
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>reset(b.dataset.mode)));
+function setTheme(t){document.documentElement.dataset.theme=t;$('#theme').textContent=t==='dark'?'☀️ Claro':'🌙 Oscuro';try{localStorage.setItem('tema',t)}catch(e){}if(D.S)draw()}
+$('#theme').addEventListener('click',()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark'));
+let t0;try{t0=localStorage.getItem('tema')}catch(e){}
+setTheme(t0||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
+new ResizeObserver(size).observe(cv.parentElement);
+reset('num');size();
+</script>
+</body>
+</html>
